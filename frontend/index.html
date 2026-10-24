@@ -14,15 +14,18 @@
     body { background-color: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
 
     /* Sidebar */
-    .sidebar { width: 250px; background: var(--surface); padding: 20px; border-right: 1px solid #2A3A5A; }
+    .sidebar { width: 250px; background: var(--surface); padding: 20px; border-right: 1px solid #2A3A5A; flex-shrink: 0; }
     .sidebar h2 { color: var(--primary); margin-bottom: 30px; font-size: 20px; text-align: center;}
-    .sidebar a { display: block; color: var(--text-muted); text-decoration: none; padding: 12px; margin-bottom: 5px; border-radius: 8px; transition: 0.3s; }
+    .sidebar a { display: block; color: var(--text-muted); text-decoration: none; padding: 12px; margin-bottom: 5px; border-radius: 8px; transition: 0.3s; cursor: pointer; }
     .sidebar a:hover, .sidebar a.active { background: rgba(59, 130, 246, 0.1); color: var(--primary); font-weight: bold; }
 
     /* Main Content */
-    .main-content { flex: 1; padding: 20px; overflow-y: auto; }
+    .main-content { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; }
     .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
     .topbar h1 { font-size: 24px; }
+    
+    /* Dashboard View */
+    #dashboardView { display: block; }
     
     /* Summary Cards */
     .cards-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 30px; }
@@ -45,6 +48,9 @@
     .social-metric { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 14px; }
     .progress-bar { height: 8px; background: #2A3A5A; border-radius: 4px; margin-top: 5px; overflow: hidden; }
     .progress { height: 100%; border-radius: 4px; }
+
+    /* Iframe for Integration */
+    #moduleView { width: 100%; height: 85vh; border: none; border-radius: 12px; background: var(--bg); display: none; }
   </style>
 </head>
 <body>
@@ -52,10 +58,10 @@
   <!-- Sidebar -->
   <div class="sidebar">
     <h2>⚡ App Dashboard</h2>
-    <a href="#" class="active">📊 Central Dashboard</a>
-    <a href="#">🛒 Marketplace (Team A)</a>
-    <a href="#">📦 Ledger (Team B)</a>
-    <a href="#">🤖 AI & Social (Team C)</a>
+    <a class="active" id="link-dash" onclick="showPage('dashboard', this)">📊 Central Dashboard</a>
+    <a id="link-a" onclick="showPage('teamA', this)">🛒 Marketplace (Team A)</a>
+    <a id="link-b" onclick="showPage('teamB', this)">📦 Ledger (Team B)</a>
+    <a id="link-c" onclick="showPage('teamC', this)">🤖 AI & Social (Team C)</a>
   </div>
 
   <!-- Main Content -->
@@ -65,81 +71,70 @@
       <div>Welcome, Admin</div>
     </div>
 
-    <!-- Summary Cards (D6) -->
-    <div class="cards-grid">
-      <div class="card">
-        <h3>Total Orders</h3>
-        <div class="value" style="color: var(--primary);" id="totalOrders">0</div>
-      </div>
-      <div class="card">
-        <h3>Total Sales</h3>
-        <div class="value" style="color: var(--success);" id="totalSales">Rs 0</div>
-      </div>
-      <div class="card">
-        <h3>Low Stock Items</h3>
-        <div class="value" style="color: var(--warning);" id="lowStock">0</div>
-      </div>
-      <div class="card">
-        <h3>Social Engagement</h3>
-        <div class="value" style="color: var(--secondary);" id="engagement">0</div>
-      </div>
-    </div>
-
-    <!-- Charts Area -->
-    <div class="charts-grid">
-      <!-- Sales Trend Chart -->
-      <div class="chart-box">
-        <h3>📈 Weekly Sales Trend</h3>
-        <div class="bar-chart" id="salesChart">
-          <!-- Bars will be injected here -->
+    <!-- DASHBOARD VIEW (Charts & Cards) -->
+    <div id="dashboardView">
+      <div class="cards-grid">
+        <div class="card">
+          <h3>Total Orders</h3>
+          <div class="value" style="color: var(--primary);" id="totalOrders">0</div>
+        </div>
+        <div class="card">
+          <h3>Total Sales</h3>
+          <div class="value" style="color: var(--success);" id="totalSales">Rs 0</div>
+        </div>
+        <div class="card">
+          <h3>Low Stock Items</h3>
+          <div class="value" style="color: var(--warning);" id="lowStock">0</div>
+        </div>
+        <div class="card">
+          <h3>Social Engagement</h3>
+          <div class="value" style="color: var(--secondary);" id="engagement">0</div>
         </div>
       </div>
 
-      <!-- Social Metrics -->
-      <div class="chart-box">
-        <h3>💬 Sentiment Analysis</h3>
-        <div style="margin-top: 20px;">
-          <div class="social-metric">
-            <span>Positive</span> <span id="posVal">0%</span>
+      <div class="charts-grid">
+        <div class="chart-box">
+          <h3>📈 Weekly Sales Trend</h3>
+          <div class="bar-chart" id="salesChart"></div>
+        </div>
+        <div class="chart-box">
+          <h3>💬 Sentiment Analysis</h3>
+          <div style="margin-top: 20px;">
+            <div class="social-metric"><span>Positive</span> <span id="posVal">0%</span></div>
+            <div class="progress-bar"><div class="progress" id="posBar" style="background: var(--success); width: 0%;"></div></div>
+            <div class="social-metric" style="margin-top: 15px;"><span>Neutral</span> <span id="neuVal">0%</span></div>
+            <div class="progress-bar"><div class="progress" id="neuBar" style="background: var(--warning); width: 0%;"></div></div>
+            <div class="social-metric" style="margin-top: 15px;"><span>Negative</span> <span id="negVal">0%</span></div>
+            <div class="progress-bar"><div class="progress" id="negBar" style="background: var(--danger); width: 0%;"></div></div>
           </div>
-          <div class="progress-bar"><div class="progress" id="posBar" style="background: var(--success); width: 0%;"></div></div>
-
-          <div class="social-metric" style="margin-top: 15px;">
-            <span>Neutral</span> <span id="neuVal">0%</span>
-          </div>
-          <div class="progress-bar"><div class="progress" id="neuBar" style="background: var(--warning); width: 0%;"></div></div>
-
-          <div class="social-metric" style="margin-top: 15px;">
-            <span>Negative</span> <span id="negVal">0%</span>
-          </div>
-          <div class="progress-bar"><div class="progress" id="negBar" style="background: var(--danger); width: 0%;"></div></div>
         </div>
       </div>
     </div>
+
+    <!-- IFRAME VIEW (Team A, B, C load karne ke liye) -->
+    <iframe id="moduleView"></iframe>
+
   </div>
 
 <script>
   const API_URL = 'http://localhost:4003/api/dashboard';
-  const TOKEN = "dummy"
 
+  // 1. Dashboard Data Load karna
   async function loadDashboard() {
     try {
-      const res = await fetch(API_URL, {
-        headers: { 'Authorization': `Bearer ${TOKEN}` }
-      });
+      const res = await fetch(API_URL);
       const data = await res.json();
       
-      if (data.error) return alert(data.error);
+      if (data.error) return console.log(data.error);
       
       const d = data.data;
 
-      // 1. Update Cards
       document.getElementById('totalOrders').innerText = d.summary.totalOrders;
       document.getElementById('totalSales').innerText = 'Rs ' + d.summary.totalSales.toLocaleString();
       document.getElementById('lowStock').innerText = d.summary.lowStockItems;
       document.getElementById('engagement').innerText = d.summary.socialEngagement;
 
-      // 2. Draw Sales Chart (Max height 180px)
+      // Draw Chart
       const maxSale = Math.max(...d.salesTrend.map(s => s.sales));
       const chartContainer = document.getElementById('salesChart');
       chartContainer.innerHTML = '';
@@ -154,26 +149,50 @@
         `;
       });
 
-      // 3. Update Social Metrics
+      // Social Metrics
       const sm = d.socialMetrics;
       document.getElementById('posVal').innerText = sm.positiveSentiment + '%';
       document.getElementById('posBar').style.width = sm.positiveSentiment + '%';
-      
       document.getElementById('neuVal').innerText = sm.neutralSentiment + '%';
       document.getElementById('neuBar').style.width = sm.neutralSentiment + '%';
-      
       document.getElementById('negVal').innerText = sm.negativeSentiment + '%';
       document.getElementById('negBar').style.width = sm.negativeSentiment + '%';
 
     } catch (error) {
-      console.error(error);
-      alert("Failed to load dashboard data");
+      console.error("Dashboard fetch failed:", error);
     }
   }
 
-  window.onload = () => {
-    if (TOKEN) loadDashboard();
-  };
+  // 2. Navigation Function
+  function showPage(pageName, element) {
+    document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
+    element.classList.add('active');
+
+    const dash = document.getElementById('dashboardView');
+    const frame = document.getElementById('moduleView');
+
+    if (pageName === 'dashboard') {
+      dash.style.display = 'block';
+      frame.style.display = 'none';
+    } else {
+      dash.style.display = 'none';
+      frame.style.display = 'block';
+
+      // Aapke laptop ke exact paths yahan hain
+      if (pageName === 'teamA') frame.src = 'file:///C:/Users/dell/Documents/team-a-marketplace/frontend/index.html';
+      if (pageName === 'teamB') frame.src = 'file:///C:/Users/dell/Documents/team-b-ledger/frontend/index.html';
+      if (pageName === 'teamC') frame.src = 'file:///C:/Users/dell/Documents/team-c-ai/frontend/index.html';
+    }
+  }
+  // Token ko save karne ke liye
+const savedToken = localStorage.getItem('jwtToken');
+if (!savedToken) {
+  const newToken = prompt("Paste your JWT Token here:");
+  if (newToken) localStorage.setItem('jwtToken', newToken);
+}
+
+  // Start dashboard
+  window.onload = loadDashboard;
 </script>
 </body>
 </html>
