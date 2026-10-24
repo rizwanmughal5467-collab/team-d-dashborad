@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Team D - Central Dashboard</title>
+  <style>
+    :root {
+      --bg: #0B1220; --surface: #111C31; --primary: #3B82F6; --secondary: #8B5CF6;
+      --success: #10B981; --warning: #F59E0B; --danger: #F43F5E;
+      --text: #F8FAFC; --text-muted: #94A3B8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+    body { background-color: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
+
+    /* Sidebar */
+    .sidebar { width: 250px; background: var(--surface); padding: 20px; border-right: 1px solid #2A3A5A; }
+    .sidebar h2 { color: var(--primary); margin-bottom: 30px; font-size: 20px; text-align: center;}
+    .sidebar a { display: block; color: var(--text-muted); text-decoration: none; padding: 12px; margin-bottom: 5px; border-radius: 8px; transition: 0.3s; }
+    .sidebar a:hover, .sidebar a.active { background: rgba(59, 130, 246, 0.1); color: var(--primary); font-weight: bold; }
+
+    /* Main Content */
+    .main-content { flex: 1; padding: 20px; overflow-y: auto; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+    .topbar h1 { font-size: 24px; }
+    
+    /* Summary Cards */
+    .cards-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 30px; }
+    .card { background: var(--surface); padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+    .card h3 { font-size: 14px; color: var(--text-muted); margin-bottom: 10px; }
+    .card .value { font-size: 28px; font-weight: bold; }
+
+    /* Charts Area */
+    .charts-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+    .chart-box { background: var(--surface); padding: 20px; border-radius: 12px; }
+    .chart-box h3 { margin-bottom: 20px; font-size: 16px; color: var(--text-muted); }
+    
+    /* Simple CSS Bar Chart */
+    .bar-chart { display: flex; align-items: flex-end; justify-content: space-between; height: 200px; padding-top: 20px; border-bottom: 1px solid #2A3A5A; }
+    .bar-container { display: flex; flex-direction: column; align-items: center; width: 10%; }
+    .bar { width: 100%; background: var(--primary); border-radius: 4px 4px 0 0; transition: height 0.5s; }
+    .bar-label { margin-top: 10px; font-size: 12px; color: var(--text-muted); }
+
+    /* Social Metrics */
+    .social-metric { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 14px; }
+    .progress-bar { height: 8px; background: #2A3A5A; border-radius: 4px; margin-top: 5px; overflow: hidden; }
+    .progress { height: 100%; border-radius: 4px; }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <h2>⚡ App Dashboard</h2>
+    <a href="#" class="active">📊 Central Dashboard</a>
+    <a href="#">🛒 Marketplace (Team A)</a>
+    <a href="#">📦 Ledger (Team B)</a>
+    <a href="#">🤖 AI & Social (Team C)</a>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <div class="topbar">
+      <h1>Executive Dashboard</h1>
+      <div>Welcome, Admin</div>
+    </div>
+
+    <!-- Summary Cards (D6) -->
+    <div class="cards-grid">
+      <div class="card">
+        <h3>Total Orders</h3>
+        <div class="value" style="color: var(--primary);" id="totalOrders">0</div>
+      </div>
+      <div class="card">
+        <h3>Total Sales</h3>
+        <div class="value" style="color: var(--success);" id="totalSales">Rs 0</div>
+      </div>
+      <div class="card">
+        <h3>Low Stock Items</h3>
+        <div class="value" style="color: var(--warning);" id="lowStock">0</div>
+      </div>
+      <div class="card">
+        <h3>Social Engagement</h3>
+        <div class="value" style="color: var(--secondary);" id="engagement">0</div>
+      </div>
+    </div>
+
+    <!-- Charts Area -->
+    <div class="charts-grid">
+      <!-- Sales Trend Chart -->
+      <div class="chart-box">
+        <h3>📈 Weekly Sales Trend</h3>
+        <div class="bar-chart" id="salesChart">
+          <!-- Bars will be injected here -->
+        </div>
+      </div>
+
+      <!-- Social Metrics -->
+      <div class="chart-box">
+        <h3>💬 Sentiment Analysis</h3>
+        <div style="margin-top: 20px;">
+          <div class="social-metric">
+            <span>Positive</span> <span id="posVal">0%</span>
+          </div>
+          <div class="progress-bar"><div class="progress" id="posBar" style="background: var(--success); width: 0%;"></div></div>
+
+          <div class="social-metric" style="margin-top: 15px;">
+            <span>Neutral</span> <span id="neuVal">0%</span>
+          </div>
+          <div class="progress-bar"><div class="progress" id="neuBar" style="background: var(--warning); width: 0%;"></div></div>
+
+          <div class="social-metric" style="margin-top: 15px;">
+            <span>Negative</span> <span id="negVal">0%</span>
+          </div>
+          <div class="progress-bar"><div class="progress" id="negBar" style="background: var(--danger); width: 0%;"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const API_URL = 'http://localhost:4003/api/dashboard';
+  const TOKEN = "dummy"
+
+  async function loadDashboard() {
+    try {
+      const res = await fetch(API_URL, {
+        headers: { 'Authorization': `Bearer ${TOKEN}` }
+      });
+      const data = await res.json();
+      
+      if (data.error) return alert(data.error);
+      
+      const d = data.data;
+
+      // 1. Update Cards
+      document.getElementById('totalOrders').innerText = d.summary.totalOrders;
+      document.getElementById('totalSales').innerText = 'Rs ' + d.summary.totalSales.toLocaleString();
+      document.getElementById('lowStock').innerText = d.summary.lowStockItems;
+      document.getElementById('engagement').innerText = d.summary.socialEngagement;
+
+      // 2. Draw Sales Chart (Max height 180px)
+      const maxSale = Math.max(...d.salesTrend.map(s => s.sales));
+      const chartContainer = document.getElementById('salesChart');
+      chartContainer.innerHTML = '';
+
+      d.salesTrend.forEach(item => {
+        const height = (item.sales / maxSale) * 180;
+        chartContainer.innerHTML += `
+          <div class="bar-container">
+            <div class="bar" style="height: ${height}px;"></div>
+            <div class="bar-label">${item.date}</div>
+          </div>
+        `;
+      });
+
+      // 3. Update Social Metrics
+      const sm = d.socialMetrics;
+      document.getElementById('posVal').innerText = sm.positiveSentiment + '%';
+      document.getElementById('posBar').style.width = sm.positiveSentiment + '%';
+      
+      document.getElementById('neuVal').innerText = sm.neutralSentiment + '%';
+      document.getElementById('neuBar').style.width = sm.neutralSentiment + '%';
+      
+      document.getElementById('negVal').innerText = sm.negativeSentiment + '%';
+      document.getElementById('negBar').style.width = sm.negativeSentiment + '%';
+
+    } catch (error) {
+      console.error(error);
+      alert("Failed to load dashboard data");
+    }
+  }
+
+  window.onload = () => {
+    if (TOKEN) loadDashboard();
+  };
+</script>
+</body>
+</html>
