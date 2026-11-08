@@ -28,10 +28,10 @@
     #dashboardView { display: block; }
     
     /* Summary Cards */
-    .cards-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 30px; }
+    .cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 30px; }
     .card { background: var(--surface); padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
     .card h3 { font-size: 14px; color: var(--text-muted); margin-bottom: 10px; }
-    .card .value { font-size: 28px; font-weight: bold; }
+    .card .value { font-size: 24px; font-weight: bold; }
 
     /* Charts Area */
     .charts-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
@@ -49,29 +49,27 @@
     .progress-bar { height: 8px; background: #2A3A5A; border-radius: 4px; margin-top: 5px; overflow: hidden; }
     .progress { height: 100%; border-radius: 4px; }
 
-    /* Iframe for Integration */
+    /* Iframe */
     #moduleView { width: 100%; height: 85vh; border: none; border-radius: 12px; background: var(--bg); display: none; }
   </style>
 </head>
 <body>
 
-  <!-- Sidebar -->
   <div class="sidebar">
     <h2>⚡ App Dashboard</h2>
     <a class="active" id="link-dash" onclick="showPage('dashboard', this)">📊 Central Dashboard</a>
     <a id="link-a" onclick="showPage('teamA', this)">🛒 Marketplace (Team A)</a>
     <a id="link-b" onclick="showPage('teamB', this)">📦 Ledger (Team B)</a>
     <a id="link-c" onclick="showPage('teamC', this)">🤖 AI & Social (Team C)</a>
+    <a id="link-store" onclick="showPage('store', this)">🛍️ Customer Store</a>
   </div>
 
-  <!-- Main Content -->
   <div class="main-content">
     <div class="topbar">
       <h1>Executive Dashboard</h1>
       <div>Welcome, Admin</div>
     </div>
 
-    <!-- DASHBOARD VIEW (Charts & Cards) -->
     <div id="dashboardView">
       <div class="cards-grid">
         <div class="card">
@@ -81,6 +79,10 @@
         <div class="card">
           <h3>Total Sales</h3>
           <div class="value" style="color: var(--success);" id="totalSales">Rs 0</div>
+        </div>
+        <div class="card">
+          <h3>Net Profit</h3>
+          <div class="value" style="color: #A855F7;" id="netProfit">Rs 0</div>
         </div>
         <div class="card">
           <h3>Low Stock Items</h3>
@@ -111,15 +113,12 @@
       </div>
     </div>
 
-    <!-- IFRAME VIEW (Team A, B, C load karne ke liye) -->
     <iframe id="moduleView"></iframe>
-
   </div>
 
 <script>
   const API_URL = 'http://localhost:4003/api/dashboard';
 
-  // 1. Dashboard Data Load karna
   async function loadDashboard() {
     try {
       const res = await fetch(API_URL);
@@ -131,11 +130,11 @@
 
       document.getElementById('totalOrders').innerText = d.summary.totalOrders;
       document.getElementById('totalSales').innerText = 'Rs ' + d.summary.totalSales.toLocaleString();
+      document.getElementById('netProfit').innerText = 'Rs ' + (d.summary.netProfit || 0).toLocaleString();
       document.getElementById('lowStock').innerText = d.summary.lowStockItems;
       document.getElementById('engagement').innerText = d.summary.socialEngagement;
 
-      // Draw Chart
-      const maxSale = Math.max(...d.salesTrend.map(s => s.sales));
+      const maxSale = Math.max(...d.salesTrend.map(s => s.sales)) || 1;
       const chartContainer = document.getElementById('salesChart');
       chartContainer.innerHTML = '';
 
@@ -149,7 +148,6 @@
         `;
       });
 
-      // Social Metrics
       const sm = d.socialMetrics;
       document.getElementById('posVal').innerText = sm.positiveSentiment + '%';
       document.getElementById('posBar').style.width = sm.positiveSentiment + '%';
@@ -163,10 +161,9 @@
     }
   }
 
-  // 2. Navigation Function
   function showPage(pageName, element) {
     document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
-    element.classList.add('active');
+    if(element) element.classList.add('active');
 
     const dash = document.getElementById('dashboardView');
     const frame = document.getElementById('moduleView');
@@ -174,24 +171,18 @@
     if (pageName === 'dashboard') {
       dash.style.display = 'block';
       frame.style.display = 'none';
+      loadDashboard(); // Refresh dashboard data
     } else {
       dash.style.display = 'none';
       frame.style.display = 'block';
 
-      // Aapke laptop ke exact paths yahan hain
       if (pageName === 'teamA') frame.src = 'file:///C:/Users/dell/Documents/team-a-marketplace/frontend/index.html';
       if (pageName === 'teamB') frame.src = 'file:///C:/Users/dell/Documents/team-b-ledger/frontend/index.html';
       if (pageName === 'teamC') frame.src = 'file:///C:/Users/dell/Documents/team-c-ai/frontend/index.html';
+      if (pageName === 'store') frame.src = 'file:///C:/Users/dell/Documents/cosmetics-store/index.html';
     }
   }
-  // Token ko save karne ke liye
-const savedToken = localStorage.getItem('jwtToken');
-if (!savedToken) {
-  const newToken = prompt("Paste your JWT Token here:");
-  if (newToken) localStorage.setItem('jwtToken', newToken);
-}
 
-  // Start dashboard
   window.onload = loadDashboard;
 </script>
 </body>

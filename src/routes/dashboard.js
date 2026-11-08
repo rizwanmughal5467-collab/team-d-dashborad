@@ -1,50 +1,65 @@
 const express = require('express');
 const router = express.Router();
-const { db } = require('../firebase'); // Firebase connect kiya
+const { db } = require('../firebase');
 
 router.get('/', async (req, res) => {
   try {
-    const orgId = 'org_123'; // Abhi ke liye test orgId (Baad mein token se aayega)
+    const orgId = 'org_123';
 
-    // 1. Total Orders aur Total Sales nikaalo (Team B ke data se)
+    // 1. Sales, Orders aur Net Profit
     const salesSnapshot = await db.collection('ledgerSales').where('orgId', '==', orgId).get();
     let totalOrders = 0;
     let totalSales = 0;
+    let outstandingPayments = 0;
+    let netProfit = 0;
+
     salesSnapshot.forEach(doc => {
-      totalOrders++;
-      totalSales += doc.data().totalAmount || 0;
+      const sale = doc.data();
+      totalOrders++; 
+      
+      if (sale.paymentStatus === 'paid') {
+        totalSales += sale.totalAmount || 0;
+        
+        // Net Profit Calculate: (Selling Price - Cost Price) * Quantity
+        if (sale.items && sale.items.length > 0) {
+          sale.items.forEach(item => {
+            const cost = item.costAtSale || 0;
+            const selling = item.priceAtSale || 0;
+            netProfit += (selling - cost) * item.qty;
+          });
+        }
+      } else {
+        outstandingPayments += sale.totalAmount || 0;
+      }
     });
 
-    // 2. Low Stock Items nikaalo (Team B ke products se)
+    // 2. Low Stock
     const productsSnapshot = await db.collection('ledgerProducts').where('orgId', '==', orgId).get();
     let lowStockItems = 0;
     productsSnapshot.forEach(doc => {
       if (doc.data().stock <= 10) lowStockItems++;
     });
 
-    // 3. Social Engagement nikaalo (Team C ke drafts se - nakli hisaab)
+    // 3. Social Engagement
     const draftsSnapshot = await db.collection('aiContentDrafts').where('orgId', '==', orgId).get();
-    let socialEngagement = draftsSnapshot.size * 150; // Har draft par 150 engagement
+    let socialEngagement = draftsSnapshot.size * 150;
 
-    // 4. Mock Charts (Inko baad mein asli data se update kar sakte hain)
+    // 4. Mock Sales Trend
     const salesTrend = [
-      { date: "Mon", sales: totalSales * 0.1 },
-      { date: "Tue", sales: totalSales * 0.15 },
-      { date: "Wed", sales: totalSales * 0.1 },
-      { date: "Thu", sales: totalSales * 0.2 },
-      { date: "Fri", sales: totalSales * 0.15 },
-      { date: "Sat", sales: totalSales * 0.2 },
+      { date: "Mon", sales: totalSales * 0.1 }, { date: "Tue", sales: totalSales * 0.15 },
+      { date: "Wed", sales: totalSales * 0.1 }, { date: "Thu", sales: totalSales * 0.2 },
+      { date: "Fri", sales: totalSales * 0.15 }, { date: "Sat", sales: totalSales * 0.2 },
       { date: "Sun", sales: totalSales * 0.1 }
     ];
 
-    // Response bhejo
     res.json({
       data: {
         summary: {
           totalOrders: totalOrders,
           totalSales: totalSales,
           lowStockItems: lowStockItems,
-          socialEngagement: socialEngagement
+          socialEngagement: socialEngagement,
+          netProfit: netProfit // <-- Naya Field
         },
         salesTrend: salesTrend,
         socialMetrics: { positiveSentiment: 80, neutralSentiment: 15, negativeSentiment: 5 }
